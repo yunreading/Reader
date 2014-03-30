@@ -1,0 +1,455 @@
+﻿<!DOCTYPE html>
+<html  manifest="cache.manifest" xmlns:xn="http://www.renren.com/2009/xnml">
+<head>
+	<title> Yun Reading 云读--Let's read in the cloud!</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta property="wb:webmaster" content="ffe3eeb8f9094f74" />
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+	<meta property="og:title" content="Yunreading" />
+    <meta property="og:type" content="book" />
+    <meta property="og:url" content="http://www.yunreading.com" />
+    <meta property="og:image" content="http://www.yunreading.com/styles/images/large.png" />
+    <meta property="og:site_name" content="Yun Reading" />
+    <meta property="og:description" content="Reading in the Cloud " />
+	<meta property="fb:admins" content="1476261048" />
+	<meta property="fb:app_id" content="268974906448534"/>
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+	<link rel="mobile stylesheet" href="styles/jqueryMobile.css" />
+	<link rel="mobile stylesheet" href="styles/index.css" />
+	<link rel="apple-touch-icon" sizes="72x72" href="styles/images/logo.png" />
+	<script type="text/javascript" src="scripts/jquery.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery.mobile.min.js"></script>
+	<script type="text/javascript" src="scripts/storeAPI.js"></script>
+	<script type="text/javascript" src="scripts/cookie.js"></script>
+	<script type="text/javascript" src="scripts/global.js"></script>
+		<script>
+			
+			var userId;// = getCookie('userID');
+			var numOfCol;
+			//var Books;
+			var booklist;
+			
+			function displayStoreBooks(thebooks){
+				//alert(books);
+				$.mobile.pageLoading(true);
+				$('tbody').remove();
+				if (thebooks == 0) {
+					$('#error_msg').html("<h1>Oops, cannot find the books you want, please visit our public page to post your requests, thank you.</h1>");
+					return;
+				}
+				else{
+					$('#error_msg').html("");
+					booklist = thebooks;
+					
+					var table_books = $('#table_books');
+					if(window.innerWidth > window.innerHeight)
+				        numOfCol = 4;
+				    else numOfCol = 3;
+				    //alert(books.length/numOfCol);
+				    for(i = 0; i <=(thebooks.length-1)/numOfCol; i++){
+				        //alert((i+1)*numOfCol);
+				        var tr = $('<tr'+" col="+i+'/>');
+				        for(j = i*numOfCol; j<(i+1)*numOfCol;j++){
+				            if(j<thebooks.length){
+				                var book = thebooks[j];
+				                var str = "bookId="+book.bookID;
+				                var width = (100/numOfCol)+"%";
+				                var td = $("<td "+str+" width='"+width+"' style='vertical-align : bottom' ></td>");
+								if(book.cover == null || book.cover == 0){
+									var div = $("<div id='standard_cover' book_index="+j+"></div>");
+									var div_info = $("<div class='book_info'></div>")
+				                	var text = "<p>"+book.title+"</p>"+"<p>"+book.author+"</p>";
+										div_info.html(text);
+				                	//var btn = $('<button book_index = '+j+'>More</button>')
+											// 				                		btn.bind('click',function(){
+											// var bookIndex = $(this).attr("book_index");
+											// 				                        	(bookIndex);
+											// 				                        	});
+											// 				                		div_info.append(btn);
+										div.append(div_info);
+										div.bind("click", function(){
+											var bookIndex = $(this).attr("book_index");
+											//alert(bookIndex);
+				                        	showBookDetail(bookIndex);
+										});
+										td.append(div);
+								}
+								else{
+
+									var img = $("<img src= 'data:image/" +book.type+";base64,"+book.cover+"' alt='Read' class='cover' book_index= "+j+"></img>");
+									img.bind("click", function(){
+										var bookIndex = $(this).attr("book_index");
+				                    	/*setCookie("bookID",bookID);
+				                    	setCookie("userID",userID);
+				                    	window.location = 'reading.html';
+										*/
+										window.location="detail.html?"+bookIndex;
+									});
+									td.append(img);
+								}
+				                tr.append(td);
+				            }
+				            else{
+				                var td = $('<td/>');
+				                tr.append(td);
+				            }
+				        }
+				        table_books.append(tr);
+				    }
+				}
+				
+			}
+			
+				
+			function getCategoryListCallback(catList){
+				//alert(catList);
+				$.mobile.pageLoading(true);
+				//alert(catList);
+				var lst = $("#cat_list");
+					lst.html("");
+				for(i=0; i < catList.length;i++){
+					//class='ui-btn ui-btn-icon-right ui-li-has-arrow ui-li ui-btn-down-a ui-btn-up-a'
+					var li = $("<li  style='text-align:center' class='ui-li ui-li-static ui-btn-up-a ui-btn-hover-a' cat_id= "+catList[i].categoryID+"></li>");
+					var btn = $("<span class='ui-li-count' cat_id= "+catList[i].categoryID+" ></span>");
+						btn.html(catList[i].categoryName);
+						li.bind("click", function(){
+							$.mobile.pageLoading();
+							var catID = $(this).attr("cat_id");
+							getCategoryBooks(catID,displayStoreBooks);
+							$('#categories').dialog('close');
+						});
+						li.append(btn);
+					lst.append(li);
+				}
+			}
+			
+			function showBookDetail(bookIndex){
+				var bk = booklist[bookIndex];
+				//$('.book_info_cover) = 
+				$.mobile.changePage("#book_detail", "slideup");
+				//$('#book_detail').dialog("open");
+				$('#book_title').html("<h3><strong>"+bk.title+"</strong></h3>");
+				$('#book_author').html("<h5>"+bk.author+"</h5>");
+				$('#share').html('<img src="styles/images/fb_share.png" title="Share with " onclick="feeds('+bk.bookID+',\''+bk.title+'\',\''+bk.author+'\');" width="40"/></a>'+
+			/*	 '<xn:share-button type="button_count" confirm="alert("分享成功");" cancel="alert("用户取消了");">'+
+				 '<input type="hidden" name="medium"       value="book"/>'+
+				 '<input type="hidden" name="title"        value="'+bk.title+'"/>'+
+				  ' <input type="hidden" name="link"   value="http://www.yunreading.com"/>'+  
+				  ' <input type="hidden" name="image_src"    value="http://www.yunreading.com/book/'+bk.bookID+'cover"/>'+
+				  '<input type="hidden" name="message"      value="一起来云读吧！"/>'+
+				 '</xn:share-button>'+*/
+				'<img src="styles/images/rr_share.png" title="分享到人人" onclick="rrfeeds('+bk.bookID+',\''+bk.title+'\');" width="40"/>');
+				if(!(bk.cover == null || bk.cover == 0)){
+					var img = $("<img src= 'data:image/" +bk.type+";base64,"+bk.cover+"' alt='Read' width='35%' book_index= "+j+"></img>");
+					$('.book_info_cover').html("");
+					$('.book_info_cover').append(img);
+				} else {
+                    $('.book_info_cover').html("");
+                }
+				$('#book_popularity').html("<h5>"+bk.popularity+" readers</h5>");
+				var btn_add_to_lib=$("<button data-role = 'button' book_id= "+bk.bookID+" >Add to library</button>");
+					btn_add_to_lib.bind("click",function() {
+							var bookID = $(this).attr("book_id");
+							addToLibrary(bookID,addToLibraryCallback);
+						});
+				var btn_read_now=$("<button data-role = 'button' book_id= "+bk.bookID+" >Read it now</button>");
+					btn_read_now.bind("click",function(){
+						var bookID = $(this).attr("book_id");
+						setCookie("userID",userID);
+						setCookie("bookID",bookID);
+						//addToLibrary(bookID,beforeReadCallback);
+						readItNow(bookID,beforeReadCallback);
+					});
+					$("#btns").html("");
+					$("#btns").append(btn_add_to_lib);
+					$("#btns").append(btn_read_now);
+					//$("#book_detail").dialog("open");
+			}
+			
+			function addToLibrary(bookID,callback){
+				if(userID == 1){
+					handleNonRegUser("index.html");
+				}
+				else{
+					setCookie("userID",userID);
+					downloadBook(userID,bookID,callback);
+					//window.location = "reading.html";
+				}
+			}
+			
+			function readItNow(bookID, callback){
+				if(userID == 1){
+					handleNonRegUser("reading.html");
+				}
+				else{
+					setCookie("userID",userID);
+					setCookie("bookID",bookID);
+					downloadBook(userID,bookID,callback);
+				}
+			}
+
+            function beforeReadCallback(){
+                window.location = "reading.html";
+            }
+			
+			function addToLibraryCallback(status){
+			    if(status==0)
+                    alert("Fail to add into library");
+			    else
+				    alert("Added to library successfully");
+			};
+			
+			// function handleNonRegUser(willRead){
+			//                 if(willRead){
+			//                     $("#fb_login_onfly").click(function(){fbauthen("reading.html")});
+			//                     $("#rr_login_onfly").click(function(){authen("reading.html")});
+			//                 } else {
+			//                     $("#fb_login_onfly").click(function(){fbauthen("library.html")});
+			//                     $("#rr_login_onfly").click(function(){authen("library.html")});
+			//                 }
+			// 			$.mobile.changePage("#login_dialog", "slideup");
+			// 		}
+			
+			
+			$('document').ready(function(){
+		    	//initially only the btn_login will show, the btn_social and btn_out will hide;
+				$.mobile.pageLoading();
+				registerOnlineOfflineEvent(onlineCallback, offlineCallback);
+				var mode=getCookie('mode');
+				if ((getCookie("userID"))&&(getCookie("userID") != "undefined") && (getCookie("userID")!=1))
+				{  
+				    userID = getCookie("userID");
+					$('#btn_login').hide();
+					$('#btn_out').show();
+					$('#btn_library').show();
+					$('#btn_lan').hide();
+				}
+				else
+				{
+				    userID=1;
+					$('#btn_login').show();
+					$('#btn_out').hide();
+					$('#btn_library').hide();
+					$('#btn_lan').show();
+				}			
+				console.log(getCookie("userID"));
+				//getBooks(userID,displayBooks);				
+				$("#div_search").hide();
+				 booklist=getPopular();		
+				// $("#btn_search").live('click',function(){
+				// 					if(isShowSearchbox){
+				// 					$("#div_search").hide("slow");
+				// 					isShowSearchbox = false;	
+				// 					}
+				// 					else{
+				// 						$("#div_search").show("slow",function(){
+				// 							$('#search')[0].focus();
+				// 							isShowSearchbox = true;
+				// 						});
+				// 						
+				// 					}
+				// 				});
+				
+				$("#btn_search").live('click', function(){
+					$("#div_search").toggle("slow", function(){
+						$('#search')[0].focus();
+					});
+				});
+				$(window).resize(function(){
+					$('tr').remove();
+				    booklist=getPopular();	
+					console.log(booklist);
+					displayStoreBooks(booklist);
+			    });	
+				$('#btn_library').live('click',function(){
+					if (userID == 1){
+						handleNonRegUser('library.html');
+					}
+					else{
+						window.location = 'library.html';
+					}
+				});	
+				
+				/*$('#btn_reading').live('click',function(){
+					window.location = 'reading.html';
+				});	*/
+				
+				$('#btn_close_cat').live('click',function(){
+					$('#categories').dialog('close');	
+				});
+				
+				
+				$('#btn_cat').live('click',function(){
+					$.mobile.pageLoading();
+					getCategoryList(getCategoryListCallback);
+				});
+				$('#search').live("change", function(){
+					//alert($(this).val());
+					$.mobile.pageLoading();
+					getSearchBooks($(this).val(), displayStoreBooks);
+				});
+				
+				$('#btn_newBooks').live('click',function(){
+					$.mobile.pageLoading();
+					getNewBooks(displayStoreBooks);
+				});
+				
+				$('#btn_topBooks').live('click',function(){
+					$.mobile.pageLoading();
+					getPopularBooks(displayStoreBooks);
+				});
+				
+				$('#btn_not_to_login').live('click', function(){
+					setCookie("userID",1);
+					//window.location = "reading.html";
+				});
+				$('#btn_lan').live('click',function(){window.location="/cn";});
+			});
+		</script>
+	</head>
+	<body>
+		<div id="fb-root"></div>
+		<script src="scripts/facebook.js"></script>
+		<script type="text/javascript" src="scripts/renren.js"></script>
+        <div id="intro" data-role = "dialog">
+		</div>
+	    <div data-role="page" class = "index">
+			<div data-role="header"  data-position="fixed">
+				<div class="ui-btn-left">				
+				<div id="btn_page">
+				<img src="styles/images/fb_share.png" width="40" title="visit our public page" alt="visit our public page" onclick="window.location='http://www.facebook.com/apps/application.php?id=268974906448534' "/>
+				<img src="styles/images/rr_share.png" width="40" title="访问我们的公共主页" alt="访问我们的公共主页" onclick="window.location='http://page.renren.com/699163365' "/>
+				</div>
+				<a id="status"></a>
+				</div>
+			<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-right ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+				<a id="btn_login" data-role="button" data-rel="dialog" data-transition="slidedown" onClick="login();">Login</a>
+				<a id="btn_out" data-role="button" data-rel="dialog" data-transition="slidedown" onClick="logout();">Logout</a>
+			<!--	<img src="styles/images/large.png" title="login as a guest" alt="login as a guest" onclick="guest_login();" height="20"/> -->
+			<!--    <xn:login-button size="small" onlogin="authen('library.html');" ></xn:login-button></a>-->
+				<a id="btn_library" herf="library.html" data-role="button" data-iconpos="text" data-inline="true" >Library</a>
+				<a id="btn_lan" data-role="button" data-iconpos="text" data-inline="true" >中文</a>
+			</div>
+			<h1>Yunreading</h1>
+    	</div><!-- /header -->
+			<div id = "mainpad" data-role="content">
+			<div id = "books" data-role="content">
+				<div id = "error_msg">
+				</div>
+				<table class = "table_books" id="table_books">
+				</table>
+			</div> <!--end of viewpad-->
+		</div><!-- /main pad content -->
+
+			<div data-role="fieldcontain" id = "div_search" data-theme="a">
+		    
+		    <input type="search" id="search" value="" data-theme="a"/>
+			<!--<div class="btn_go">
+				<input type="submit" value="Go" class="btn_go" id="btn_go" data-theme="a"/>
+			</div>-->
+			
+		</div>
+		<div data-position="fixed" data-role="footer">
+			<div data-role="navbar" data-iconpos="left" data-position="fixed">
+	            <ul>
+	                <li>
+	                    <a id= "btn_newBooks" data-iconpos="left">Newest</a>
+	                </li>
+	                <li>
+						<a id = "btn_topBooks" data-iconpos="left">Tops</a>
+					</li>
+					<li>
+	                    <a id= "btn_cat" href="#categories" data-iconpos="left">Categories</a>
+	                </li>
+	                <li>
+						<a id = "btn_search" data-icon="search" >Search</a>
+					</li>
+
+	            </ul>
+	
+			</div><!-- End of Navbar -->
+    	</div><!-- /Footer -->
+
+		</div><!-- /page -->
+<!--	
+		<div id="login" data-role="dialog">
+		<div data-role="header" data-theme="a">
+		   <h1><input type="button" value="RenRen Authenticate" onclick="authen();"/></h1><br>
+		   <h1><input type="button" value="Facebook Authenticate" onclick="fbauthen();"/></h1><br>
+		   <br><h1><button id="guest_login" onClick="guest_login();">Log in as a Guest</button></h1>
+		</div>
+		<div data-role="content" data-theme="a">
+		</div>
+	</div>-->
+	
+	<div id="book_detail" data-role = "dialog">
+		<div data-role="header" data-theme="a">
+			<h1>Details</h1>
+		</div>
+		
+		<div data-role="content" data-theme="a">
+			<div class="book_info_upper">
+				<div class="book_info_cover">
+					cover
+				</div>
+				<div class="book_info_details">
+					<div id="book_title">
+						title
+					</div>
+					<div id="book_author">
+						author
+					</div>
+					<div id="book_popularity">
+					</div>
+					<div id="btns">
+					</div>
+					<div id="share">
+			        </div>
+				</div>	
+               
+			</div>
+		</div>
+
+	</div><!--End of book detail-->
+	
+	<!--Category List-->
+	<div id="categories" data-role="dialog">
+		<div data-role="header" data-theme="a">
+			<h1>Catagories</h1>
+		</div>
+		<div>
+			<ul id="cat_list" data-role="listview" data-inset="true">
+			</ul>
+		</div>
+		<div id="cat_btns">
+			<a id="btn_close_cat" data-role="button" data-ref="back" data-icon="back" data-iconpos="left">Close</a>
+		</div>
+	</div>
+	<div id='login_dialog' data-role='dialog'>
+		<div data-role="header" data-theme="a">
+			<h1>Please login</h1>
+		</div>
+		<div style="text-align:center">
+			<a>
+			Please login to fully explore the cloud features of Yun Reading.
+			</a>
+			<br/>
+			<a id="rr_login_onfly">	
+            <img src="styles/images/rrlogin.PNG" title="人人登录" alt="RenRen login"  height="20"/>	
+            </a>
+            <a>			
+			<img id="fb_login_onfly" src="styles/images/fblogin.PNG" title="login with facebook" alt="login with facebook" height="20"/>
+			</a>	
+			<a id = 'btn_not_to_login' data-role="button">Continue without login</a>	
+		<!--	<a>
+			<iframe scrolling="no" frameborder="0" allowtransparency="true" src="http://www.connect.renren.com/like?url=http%3A%2F%2Fyunreading.com" style="width: 130px;height: 24px;"></iframe>
+			<iframe id="fa05e5ab8" name="f2a7c8c848" scrolling="no" style="border-width: initial; border-color: initial; overflow-x: hidden; overflow-y: hidden; height: 20px; width: 90px; border-top-style: none; border-right-style: none; border-bottom-style: none; border-left-style: none; border-width: initial; border-color: initial; " title="Like this content on Facebook." class="fb_ltr" src="http://www.facebook.com/plugins/like.php?api_key=113869198637480&amp;channel_url=http%3A%2F%2Fstatic.ak.fbcdn.net%2Fconnect%2Fxd_proxy.php%3Fversion%3D3%23cb%3Df5b94acfc%26origin%3Dhttp%253A%252F%252Fdevelopers.facebook.com%252Ff82ba148%26relation%3Dparent.parent%26transport%3Dpostmessage&amp;extended_social_context=false&amp;font=arial&amp;href=www.yunreading.com&amp;layout=button_count&amp;locale=en_US&amp;node_type=link&amp;sdk=joey&amp;send=false&amp;show_faces=false&amp;width=90"></iframe>
+			</a>-->
+		</div>
+	</div>
+	<div id="fb-root"></div>
+</body>
+
+</html>

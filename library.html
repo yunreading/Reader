@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--<html manifest="cache.manifest">-->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Clouding Read</title>
+<link rel="mobile stylesheet" href="styles/jqueryMobile.css" />
+<link rel="mobile stylesheet" href="styles/library.css" />
+<!-- Mobile App Config -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<link rel="apple-touch-icon" sizes="72x72" href="styles/images/logo.png" />
+<!-- Endof Mobile App Config-->
+
+<!-- 
+<link rel="desktop stylesheet" href="styles/style.css" />
+-->
+<!--<script type="text/javascript" src="scripts/jquery.js"></script>
+<script type="text/javascript" src="scripts/jqueryMobile.js"></script>-->
+<script type="text/javascript" src="scripts/cookie.js"></script>
+<script>
+	(function(){
+		var tmpUserID = getCookie("userID");
+		if(tmpUserID==null || tmpUserID=="undefined" || isNaN(tmpUserID)){
+			setCookie("userID","undefined");
+			window.location = "index.html";
+		}
+	})();
+</script>
+<script type="text/javascript" src="scripts/jquery.min.js"></script>
+<script type="text/javascript" src="scripts/jquery.mobile.min.js"></script>
+<script type="text/javascript" src="scripts/bookmarkAPI.js"></script>
+<script type="text/javascript" src="scripts/readingAPI.js"></script>
+<script type="text/javascript" src="scripts/settingsAPI.js"></script>
+<script type="text/javascript" src="scripts/historyAPI.js"></script>
+<script type="text/javascript" src="scripts/logicAPI.js"></script>
+<script type="text/javascript" src="scripts/libraryAPI.js"></script>
+<script type="text/javascript" src="scripts/localStorageAPI.js"></script>
+<script type="text/javascript" src="scripts/global.js"></script>
+
+<script>
+
+var userID = getCookie('userID');
+//var userID = 1;
+var numOfCol;
+var books = new Array();
+var mode;
+
+function displayBooks(bks){
+    //theBooks = books;
+    books = bks;
+    // if (books == 0) {
+    // 		
+    // 		return;
+    // 	}
+	$('tbody').remove();
+    var table = $('#books');
+    if(window.innerWidth > window.innerHeight)
+        numOfCol = 4;
+    else numOfCol = 3;
+    //alert(books.length/numOfCol);
+    for(i = 0; i <=(books.length-1)/numOfCol; i++){
+        //alert((i+1)*numOfCol);
+        var tr = $('<tr'+" row="+i+'/>');
+        for(j = i*numOfCol; j<(i+1)*numOfCol;j++){
+            if(j<books.length){
+                var book = books[j];
+                var str = "bookId="+book.bookID;
+                var width = (100/numOfCol)+"%";
+				var td = $("<td "+str+" width='"+width+"' style='vertical-align : bottom' ></td>");
+				if(book.cover == null || book.cover == 0){
+					var div = $("<div id='standard_cover' book_id="+book.bookID+"></div>");
+					var div_info = $("<div class='book_info'></div>")
+                	var text = "<p>"+book.title+"</p>"+"<p>"+book.author+"</p>";
+						div_info.html(text);
+/*                	var btn = $('<button book_id = '+book.bookID+'>Read</button>')
+                		btn.bind('click',function(){
+							var bookID = $(this).attr("book_id");
+	                    	setCookie("bookID",bookID);
+	                    	setCookie("userID",userID);
+	                    	window.location = 'reading.html';
+                        });
+*/  
+              		//div_info.append(btn);
+						div.append(div_info);
+						div.bind("click", function(){
+							var bookID = $(this).attr("book_id");
+							setCookie("bookID",bookID);
+							setCookie("userID",userID);
+							window.location = 'reading.html';
+						});
+						td.append(div);
+				}
+				else{
+				
+					var img = $("<img src= 'data:image/" +book.type+";base64,"+book.cover+"' alt='Read' class='cover' book_id= "+book.bookID+"></img>");
+					img.bind("click", function(){
+						var bookID = $(this).attr("book_id");
+                    	setCookie("bookID",bookID);
+                    	setCookie("userID",userID);
+                    	window.location = 'reading.html';
+					});
+					td.append(img);
+				}
+				var btn_del = $('<button class="btn_del" book_id="'+book.bookID+'" index="' +j+'" data-role="button" data-icon="delete">✖</button>');
+				btn_del.bind('click', function(){
+					var book_id = $(this).attr("book_id");
+					var index = $(this).attr("index");
+					//alert(index);
+					logicDeleteBook(userID,book_id, mode, function(status){
+						if (status == 1){
+							//alert("success to delete!");
+							
+							books.splice(index,1);
+							displayBooks(books);
+						}
+						else{
+							alert("fail to delete!");
+						}
+					});
+				});
+				btn_del.hide();
+				td.append(btn_del);
+                tr.append(td);
+            }
+            else{
+                var td = $('<td/>');
+                tr.append(td);
+            }
+        }
+        table.append(tr);
+    }
+    //initialBtnListeners();
+}
+
+
+function initialBtnListeners(){
+    $('button').live('click',function(){
+            var bookID = this.attr("bookID");
+            alert(bookID);
+            });
+}			
+$('document').ready(function(){       
+		registerOnlineOfflineEvent(onlineCallback, offlineCallback);
+        mode=getCookie('mode');
+		console.log("library mode"+mode);
+        logicGetBooks(userID,mode, displayBooks);	
+        $(window).resize(function(){
+            	$('tr').remove();
+            	displayBooks(books);
+            });	
+
+        $('#btn_store').live('click',function(){
+            	window.location = 'index.html';
+            });	
+
+        $('#btn_reading').live('click',function(){
+			if(localStorage.bookID == null){
+				alert("Please select a book to read :-)");
+			}
+            else window.location = 'reading.html';
+            });
+
+		$('#btn_edit').bind('click', function(){
+				$('.btn_del').toggle();
+			});
+        });
+
+//button click trigger function 
+
+</script>
+</head>
+<body style="-webkit-user-select:none !important">
+<div data-role="page" class = "library">
+	<div data-role="header" data-position="fixed">
+		<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-left ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+			<a id="btn_store" href="index.html" data-role="button" data-icon="grid" data-iconpos="text" data-inline="true" >Store</a>
+			<a id="status"></a>
+		</div>
+		<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-right ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+			<a id="btn_edit" data-iconpos="notext" data-role="button" data-icon="gear" data-theme="a"></a>
+			<a id="btn_reading"  data-role="button" >Reading</a>
+		</div>
+		<h1>Library</h1>
+	</div><!-- /header -->
+
+<div id = "mainpad" data-role="content">
+<div id = "viewpad" data-role="content">
+<table class = "table_books" id="books">
+</table>
+</div> <!--end of viewpad-->
+</div><!-- /main pad content -->
+
+<!-- 
+<div id="footer" data-role="footer">
+<p>This is footer</p>
+</div><!~~ /Footer ~~>
+-->
+
+</div><!-- /page -->
+
+
+</body>
+
+</html>

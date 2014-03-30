@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<!--<html manifest="cache.manifest">-->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Clouding Read</title>
+<link rel="mobile stylesheet" href="styles/jqueryMobile.css" />
+<link rel="mobile stylesheet" href="styles/library.css" />
+<link rel="mobile stylesheet" href="styles/jquery.mobile.simpledialog.min.css"/>
+<!-- Mobile App Config -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<link rel="apple-touch-icon" sizes="72x72" href="styles/images/logo.png" />
+<!-- Endof Mobile App Config-->
+
+<!-- 
+<link rel="desktop stylesheet" href="styles/style.css" />
+-->
+<!--<script type="text/javascript" src="scripts/jquery.js"></script>
+<script type="text/javascript" src="scripts/jqueryMobile.js"></script>-->
+<script type="text/javascript" src="scripts/cookie.js"></script>
+<script type="text/javascript" src="scripts/renren.js"></script>
+<script type="text/javascript" src="scripts/jquery.min.js"></script>
+<script type="text/javascript" src="scripts/jquery.mobile.min.js"></script>
+<script type="text/javascript" src="scripts/bookmarkAPI.js"></script>
+<script type="text/javascript" src="scripts/readingAPI.js"></script>
+<script type="text/javascript" src="scripts/settingsAPI.js"></script>
+<script type="text/javascript" src="scripts/historyAPI.js"></script>
+<script type="text/javascript" src="scripts/logicAPI.js"></script>
+<script type="text/javascript" src="scripts/libraryAPI.js"></script>
+<script type="text/javascript" src="scripts/localStorageAPI.js"></script>
+<script type="text/javascript" src="scripts/global.js"></script>
+<script type="text/javascript" src="scripts/jquery.mobile.simpledialog.min.js"></script>
+
+<script>
+ var nextLocation=window.location.search;
+   if (nextLocation.substring(0,1)=='?'){
+   nextLocation=nextLocation.substring(1);}
+   else
+   nextLocation="library.html";
+var userID = getCookie('userID');
+//var userID = 1;
+var mode;
+	
+$('document').ready(function(){       
+		registerOnlineOfflineEvent(onlineCallback, offlineCallback);
+        mode=getCookie('mode');
+		console.log("library mode"+mode);
+        $(window).resize(function(){
+            	$('tr').remove();
+            });	
+
+        $('#btn_store').live('click',function(){
+            	window.location = 'index.html';
+            });	
+
+        $('#btn_reading').live('click',function(){
+			 window.location = 'login.html';
+            });
+		$('#fblogin').live('click',function(){fbauthen(nextLocation);});
+		$('#rrlogin').live('click',function(){rrauthen(nextLocation);});
+        });
+$(document).delegate('#login', 'click', function() {
+				var email=$('#email').val();
+				var password=$('#password').val();
+				if (verifyEmail()==false)
+				{
+				   $(this).simpledialog({
+					'mode' : 'bool',
+					'prompt' : 'Error With Email',
+					'useModal': true,
+					'buttons' : {
+					  'OK': {
+						click: function () {
+						  $('#dialogoutput').text('OK');
+						}
+					  },
+					  'Cancel': {
+						click: function () {
+						  $('#dialogoutput').text('Cancel');
+						},
+						icon: "delete",
+						theme: "c"
+					  }
+					}
+				  })
+				}
+				else if (password=="")
+				{
+				 $(this).simpledialog({
+					'mode' : 'bool',
+					'prompt' : 'Error With Password',
+					'useModal': true,
+					'buttons' : {
+					  'OK': {
+						click: function () {
+						}
+					  },
+					  'Cancel': {
+						click: function () {
+						},
+						icon: "delete",
+						theme: "c"
+					  }
+					}
+				  })
+				}
+				else 
+				{
+				   $.ajax({
+					  url: "api/login_api.php",
+					  type: "POST",
+					  data: {email : email,
+					         password: password},
+					  dataType: "json",
+					  success: function(data) {
+					        userID=data['u_id'];
+					        setCookie("userID",userID);
+							$('#login').simpledialog({
+							'mode' : 'bool',
+							'prompt' : 'Successfully Login',
+							'useModal': true,
+							'buttons' : {
+							  'OK': {
+								click: function () {
+								 window.location = nextLocation;
+								}
+							  },
+							  'Cancel': {
+								click: function () {
+								},
+								icon: "delete",
+								theme: "c"
+							  }
+							}
+						  })
+					  },
+					  error: function(data)
+					  {
+						 $('#login').simpledialog({
+							'mode' : 'bool',
+							'prompt' : 'Error Login, No Such User',
+							'useModal': true,
+							'buttons' : {
+							  'OK': {
+								click: function () {
+								}
+							  },
+							  'Cancel': {
+								click: function () {
+								},
+								icon: "delete",
+								theme: "c"
+							  }
+							}
+						  })
+					 }
+					});
+				}
+			});
+function verifyEmail(){
+var status = false;     
+var emailRegEx = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
+     if (document.loginform.email.value.search(emailRegEx) == -1) {
+     }
+     else 
+	 {
+          status = true;
+     }
+     return status;
+}
+</script>
+</head>
+<body style="-webkit-user-select:none !important">
+<div id="fb-root"></div>
+  <script>
+	window.fbAsyncInit = function() {
+	  FB.init({
+		appId      : '268974906448534',
+		status     : true, 
+		cookie     : true,
+		xfbml      : true,
+		oauth      : true,
+	  });
+	};
+	(function(d){
+           var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+           if (d.getElementById(id)) {return;}
+           js = d.createElement('script'); js.id = id; js.async = true;
+           js.src = "//connect.facebook.net/en_US/all.js";
+           ref.parentNode.insertBefore(js, ref);
+     }(document));
+  </script>
+<div data-role="page" class = "library">
+	<div data-role="header" data-position="fixed">
+		<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-left ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+			<a id="btn_store" href="index.html" data-role="button" data-icon="grid" data-iconpos="text" data-inline="true" >Store</a>
+			<a id="status"></a>
+		</div>
+		<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-right ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+			<a id="btn_reading"  data-role="button" >Login</a>
+		</div>
+		<h1>Login</h1>
+	</div><!-- /header -->
+
+<div id = "mainpad" data-role="content">
+<div id = "viewpad" data-role="content">
+		<div data-role="content" data-theme="a">
+			<form name="loginform" action="api/login_api.php" method="POST">
+				<h2>Login</h2>
+				<div data-role="button" id="fblogin">
+				 <label for="name" class="ui-input-text">Login With Facebook:</label>
+				</div>
+				<div data-role="button" id="rrlogin">
+				 <label for="name" class="ui-input-text">Or 用人人网登录:</label>
+				</div>
+				<div data-role="fieldcontain">
+				 <label for="name" class="ui-input-text">Or Email:</label>
+				 <input type="text" name="email" id="email" value="" class="ui-input-text ui-body-d ui-corner-all ui-shadow-inset">
+				</div>
+				<div data-role="fieldcontain">
+				 <label for="name" class="ui-input-text">Password:</label>
+				 <input type="password" name="password" id="password" value="" class="ui-input-text ui-body-d ui-corner-all ui-shadow-inset">
+				</div>
+				<div data-role="fieldcontain">
+				 <a id="login" data-role="button" data-role="dialog">Login<a>
+				</div>		
+				<div data-role="fieldcontain">
+				 Don't Have An Account? <a href="register.html">Register<a>
+				</div>	
+			</form>
+		</div>
+	
+</div> <!--end of viewpad-->
+</div><!-- /main pad content -->
+
+<!-- 
+<div id="footer" data-role="footer">
+<p>This is footer</p>
+</div><!~~ /Footer ~~>
+-->
+
+</div><!-- /page -->
+
+
+</body>
+
+</html>

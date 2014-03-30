@@ -1,0 +1,772 @@
+<!DOCTYPE HTML>
+<html manifest="cache.manifest" class="ui-mobile min-width-320px min-width-480px min-width-768px max-width-1024px landscape">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+	<title>Clouding Read</title>
+	<link rel="mobile stylesheet" href="styles/jqueryMobile.css" />
+	<link rel="mobile stylesheet" href="styles/reading.css" />
+	<!-- Mobile App Config -->
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+	<link rel="apple-touch-icon" sizes="72x72" href="styles/images/logo.png" />
+	<!-- Endof Mobile App Config-->
+<!-- 
+	<link rel="desktop stylesheet" href="styles/style.css" />
+ -->
+	<script type="text/javascript" src="scripts/cookie.js"></script>
+	<script>
+	(function(){
+		var tmpUserID = getCookie("userID");
+		var tmpBookID = getCookie("bookID");
+		if(tmpUserID==null || tmpUserID=="undefined" || isNaN(tmpUserID)){
+			setCookie("userID","undefined");
+			window.location = "login.html?reading.html";
+		} else {
+			if(tmpBookID==null || tmpBookID=="undefined" || isNaN(tmpBookID)){
+				if(tmpUserID==1){
+					window.location = "login.html?reading.html";
+				} else {
+					window.location = "library.html";
+				}
+			}
+		}
+	})();
+	</script>
+	<script type="text/javascript" src="scripts/jquery.min.js"></script>
+	<script type="text/javascript" src="scripts/jquery.mobile.min.js"></script>
+	<script type="text/javascript" src="scripts/bookmarkAPI.js"></script>
+	<script type="text/javascript" src="scripts/readingAPI.js"></script>
+	<script type="text/javascript" src="scripts/settingsAPI.js"></script>
+	<script type="text/javascript" src="scripts/historyAPI.js"></script>
+	<script type="text/javascript" src="scripts/logicAPI.js"></script>
+	<script type="text/javascript" src="scripts/localStorageAPI.js"></script>
+	<script type="text/javascript" src="scripts/global.js"></script>
+	
+<!-- 
+	<script type="text/javascript" src="scripts/global.js"></script>	
+ -->
+	<script  type="text/javascript">
+	//	$.mobile.fixedToolbars.setTouchToggleEnabled(false);
+		var userID = getCookie('userID');
+		var bookID = getCookie('bookID');
+		var settings;
+		var sampleSettings;
+		var bookmarks;
+		var chapters;
+		var content;
+		var currentPageNum;
+		var currentChapNum;
+		var totalPageNum;
+		var readingPad_width;
+		var readingPad_height;
+		var theHistory;
+
+		var useKeyboard=true;
+		var isLoaded=false;
+
+		
+		window.addEventListener('offline', function() {
+		  if(navigator.onLine == false) {
+		    mode=0;
+			setCookie("mode",0);
+		    alert('You went offline');
+		  } else {
+		    mode=1;
+			setCookie("mode",1);
+		    alert('You are online again!');
+		  }
+		}, true);
+		
+		function logicUpdateSettingsCallback(status){
+			logicGetContentForBook(bookID,currentChapNum,content.pagesToDisplay[currentPageNum].position,settings,readingPad_width,readingPad_height, mode, logicGetContentForBookCallback);
+			initialReadingStyle();
+	
+		}
+		//logicUpdateHistory();//UserID, bookID, currentChapNum, pagesToDisplay[currentPageNum].position pagesToDisplay[].content
+		function logicUpdateHistoryCallback(status){
+			
+		}
+		
+		
+		function logicCreateBookmarkCallback(status){
+			if(status == 1){
+				logicGetBookmarkListForBook(userID,bookID, mode, function(mks){
+					//alert(status);
+					if(mks != 0){
+						bookmarks = mks;
+						initialBookmarks();
+				}
+				});
+			}
+		}
+		
+		function onBookmarkClick(){
+			//locateChapter(chapterid,bookid,position,locateChapterCallback);
+			//getContent(chapter)
+			
+		}
+		
+		
+		function logicGetContentForBookCallback(cont){
+			content = cont;
+			currentPageNum = cont.pageNum;
+			currentChapNum = cont.chapNum;
+			//pagesToDisplay = cont.pagesToDisplay;
+			totalPageNum = cont.pagesToDisplay.length-1;
+			$('#readingPad').html(content.pagesToDisplay[currentPageNum].content);
+			$("input[name=slider]")[0].max = totalPageNum;
+			$("input[name=slider]").val(currentPageNum).slider("refresh");
+			logicUpdateHistory(userID, bookID,currentChapNum,content.pagesToDisplay[currentPageNum].position, mode, logicUpdateHistoryCallback);
+			initialChapterList();
+			$.mobile.pageLoading(true);
+		}
+			
+			/*window.onorientationchange = function(){
+
+			    var orientation = window.orientation;
+
+			    // Look at the value of window.orientation:
+
+			    if (orientation == 0 || orientation == -180){
+					//$('meta[name=viewport]')[0].content="width=device-width,initial-scale=1,user-scalable=no";
+					//alert("potrait");
+					$('#left_col').css("width", "10%");
+					$('#right_col').css("width", "10%");
+				}
+				else{
+					//$('meta[name=viewport]')[0].content="width=device-width,initial-scale=1,user-scalable=no";
+					//alert("landscape");
+					$('#left_col').css("width", "5%");
+					$('#right_col').css("width", "5%");
+				}
+			}
+			*/
+			function initialSampleStyle(){
+				var settingsArr={
+					"font-family": sampleSettings.font,
+					"font-size": sampleSettings.fontSize+"px",
+					"color": sampleSettings.textColor,
+					"background-color": sampleSettings.backColor,
+				};
+				$('#sample').css(settingsArr);
+			}
+			
+			function initialReadingStyle(){
+				var settingsArr={
+					"font-family": settings.font,
+					"font-size": settings.fontSize+"px",
+					"color": settings.textColor,
+					"background-color": settings.backColor,
+				};
+				$('#readingPad').css(settingsArr);
+			}
+			
+			function initialBookmarks(){
+				//alert("in initialBookmarks()");
+				var bookmarkList = $('#list_bookmarks');
+					$('li[class=bookmarklist]').remove();
+				for(i in bookmarks){
+					var bookmark = bookmarks[i];
+					if(bookmark.deleted && bookmark.deleted==true) continue;
+					var text = bookmark.name;
+					//alert(text);
+					var str = "chap_id="+bookmark.chapterID;
+						str += " position="+bookmark.position;
+						str += " mark_id="+bookmark.markID;
+					var li = $("<li class='bookmarklist' "+str+"/>");
+					li.html(text);
+					li.bind('click',function (){
+						var c_id=$(this).attr("chap_id");
+						var pos = $(this).attr("position");
+						//alert("c_id="+c_id+" pos= "+pos);
+						logicGetContentForBook(bookID,c_id,pos,settings,readingPad_width,readingPad_height, mode, logicGetContentForBookCallback);
+						$('#bookmark').dialog('close');	
+					});
+					var btn=$('<button mark_id= '+bookmark.markID+' local_idx='+i+'>✘</button>');
+						btn.bind('click', function(){
+							var mark_id = $(this).attr('mark_id');
+							var local_idx = $(this).attr('local_idx');
+							$(this).parent().remove();
+							deleteBookmark(mark_id, logicCreateBookmarkCallback);
+							deleteBookmarkLocal(mark_id,function(){});
+							bookmarks[local_idx].deleted = true;
+						});
+						li.append(btn);
+					bookmarkList.append(li);
+				}
+			}
+			
+			function initialChapterList(){
+				var chapterList=$('#list_chapters');
+					chapterList.html("");
+				for(var i=1; i<chapters.length;i++){
+					var chap = chapters[i];
+					var text = chap;
+					var li = $("<li class='chap'data-theme='a' class='ui-btn ui-btn-icon-right ui-li-has-arrow ui-li ui-btn-down-a ui-btn-up-a'/>");
+					if (i == currentChapNum){
+						text = "⚛"+ text+"⚛";
+					}
+					li.html(text);
+					li.click(function (){
+						var tx = $(this).html();
+						//alert(tx);
+						var index = parseInt(tx.split("r")[1]);
+							//alert("index= "+index);
+						logicGetContentForBook(bookID,index,0,settings,readingPad_width,readingPad_height, mode, logicGetContentForBookCallback);
+						$('#chapters').dialog('close');	
+					});
+				chapterList.append(li);
+				}
+			}
+		function showNextPage(){
+			if(currentPageNum >= totalPageNum){
+				//alert("This is the last page of this Chapter, Wait for the next chapter!");
+				showNextChap();
+				
+			}
+			else{
+				currentPageNum++;
+				$('#readingPad').html(content.pagesToDisplay[currentPageNum].content);
+				$("input[name=slider]").val(currentPageNum).slider("refresh");
+				logicUpdateHistory(userID, bookID,currentChapNum,content.pagesToDisplay[currentPageNum].position, mode, logicUpdateHistoryCallback);
+			}
+		}
+		
+		function showPreviousPage(){
+			
+			if(currentPageNum <= 1){
+				//alert("This is the first page of this chapter! Wait fro the previous Chapter!");
+				showPreviousChap();
+			}
+			else{
+				currentPageNum--;
+				$('#readingPad').html(content.pagesToDisplay[currentPageNum].content);
+				$("input[name=slider]").val(currentPageNum).slider("refresh");
+				logicUpdateHistory(userID, bookID,currentChapNum,content.pagesToDisplay[currentPageNum].position, mode, logicUpdateHistoryCallback);
+			}
+		}
+		
+		function showPage(pageNum){
+			currentPageNum = pageNum;
+			$('#readingPad').html(content.pagesToDisplay[currentPageNum].content);
+			logicUpdateHistory(userID, bookID,currentChapNum,content.pagesToDisplay[currentPageNum].position, mode, logicUpdateHistoryCallback);
+		}
+		
+		function showPreviousChap(){
+			if (currentChapNum == 1){
+				alert("This the first Chapter!");
+				return;
+			}
+			$.mobile.pageLoading();
+			var chapter_number = parseInt(currentChapNum)-1;
+			logicGetContentForBook(bookID,chapter_number,-1,settings,readingPad_width,readingPad_height, mode, logicGetContentForBookCallback);
+		}
+		
+		function showNextChap(){
+			if (currentChapNum == chapters.length-1){
+				finishReading(bookID);
+				return;
+			}
+			$.mobile.pageLoading();
+			var chapter_number = parseInt(currentChapNum)+1;
+			logicGetContentForBook(bookID,chapter_number,0,settings,readingPad_width,readingPad_height, mode, logicGetContentForBookCallback);
+		}
+		
+		function initialCallback(stgs,bmks,chaps,cnt,hty){
+			//alert("initialCallback");
+			settings = jQuery.extend({},stgs);
+			sampleSettings = jQuery.extend({},stgs);
+			bookmarks = bmks;
+			chapters = chaps;
+			content = cnt;
+			currentPageNum = cnt.pageNum;
+			currentChapNum = cnt.chapNum;
+			totalPageNum = cnt.pagesToDisplay.length-1;
+			theHistory = hty;
+			//bookmarks[], bookmark.chapNum, .position, .comment
+			//cnt.currentPageNum,currentChapNum,pagesToDisplay[]
+			//alert(currentPageNum+" in initialCallback"+content.chapNum);
+			initialReadingStyle();
+			initialSampleStyle();
+			initialChapterList();
+			initialBookmarks();
+			$('#readingPad').html(content.pagesToDisplay[currentPageNum].content);
+			$("input[name=slider]")[0].max = totalPageNum;
+			$("input[name=slider]").val(currentPageNum).slider("refresh");
+			$.mobile.pageLoading(true);
+
+		}
+		function finishReading(bk){
+			$.mobile.changePage("#finish_dialog", "slideup");
+			$($("#finish_dialog").children().children()[0]).click(function(){useKeyboard=true;});
+			useKeyboard = false;
+		}
+		
+		
+		//*******************************************
+		//here to add eventListeners to the elements;
+		$(document).ready(function(){
+			$.mobile.pageLoading();
+			registerOnlineOfflineEvent(onlineCallback, offlineCallback);	
+			mode=getCookie('mode');			
+			$('#btn_share').show();
+			$('#share').hide();
+			if (window.innerWidth < 600){
+			$('#left_col').hide();
+			$('#right_col').hide();
+			$('div[role=application]').css("width", "50%");
+			}
+			$('#mainpad').css('height', $(window).height()-$('.ui-header').height()-2-$('.ui-footer').height()-2-15);
+			$('#readingPad').css('height',$('#viewpad').height()-55);
+			// $('#mainpad').css('height', $(window).height()-$('.ui-header').height()-2-$('.ui-footer').height()-2-15);
+			// 		$('#readingPad').css('height',$('#viewpad').height()-55);
+			readingPad_width = parseInt($('#readingPad').css('width'));
+			readingPad_height = parseInt($('#readingPad').css('height'));
+			//alert("Width "+readingPad_width+" height "+readingPad_height);	
+
+			logicInitial(userID,bookID,readingPad_width,readingPad_height, mode, initialCallback);
+
+			$(window).resize(function(){
+					$('#mainpad').css('height', $(window).height()-$('.ui-header').height()-2-$('.ui-footer').height()-2-15);
+					$('#readingPad').css('height',$('#viewpad').height()-55);
+					if (window.innerWidth < 600){
+					$('#left_col').hide();
+					$('#right_col').hide();
+					$('div[role=application]').css("width", "50%");
+					}
+					else{
+					$('#left_col').show();
+					$('#right_col').show();
+					}
+					});
+
+
+
+			//show the content of currently reading.
+
+
+
+			//use arrow keys to navigate reading pages;
+			document.onkeydown = function(evt){
+				if(!useKeyboard) return;
+				evt = evt ||window.event; 
+				var keyCode =evt.which||evt.keyCode;
+				if(keyCode == 39){
+					showNextPage();
+				}
+				else if (keyCode == 37){
+					showPreviousPage();
+				}
+			};
+
+			$('#readingPad').live('swiperight', function(){
+					showPreviousPage();
+					});
+
+			$('#readingPad').live('swipeleft', function(){
+					showNextPage();
+					});
+
+			// $('#readingPad').live('click', function(){
+			// 					$('div[data-role=header]').toggle()
+			// 					$('div[data-role=footer]').toggle()
+			// 			});
+
+
+			//$("input[name=slider]").val(currentPageNum).slider("refresh");
+
+			$('.upper').bind('click',function(){
+					showPreviousPage();
+					});
+			$('.lower').bind('click',function(){
+					showNextPage();
+					});
+
+
+
+			/*$("#btn_setting").live('click', function(){
+			  var mainpadWidth = $("#mainpad").width();
+			  var mainpadHeight = $('#maindpad').height();
+			  var posTop = ($('#settingPad').parent().height() - $('#settingPad').height())/2;
+			  var posLeft = (mainpadWidth - $('#settingPad').width())/2;
+			  $('#settingPad').show();
+			  $('#settingPad').css({'position':"absolute", 'top':posTop, 'left':posLeft});
+			  $('#readingPad').hide();
+			  $('#slider').hide();
+
+			  });
+			 */
+			$('#library').live('click', function(){
+					if (userID == 1){
+					alert("Please login to view your personal cloud library");
+					window.location = 'index.html';
+					}
+					else window.location = 'library.html';
+					});
+
+			$('#btn_dec_font_size').live('click',function(){
+					if (parseInt(settings.fontSize)-2 >= 10){
+					var size = parseInt(settings.fontSize)-2;
+					settings.fontSize = size;
+					//initialReadingStyle();
+					sampleSettings = jQuery.extend({},settings);
+					logicUpdateSettings(userID,settings.font, settings.fontSize, settings.textColor,settings.backColor,  mode, logicUpdateSettingsCallback);
+					}
+					else{
+					alert("You are setting font size too small!");
+					}
+
+					});
+
+			$('#btn_inc_font_size').live('click',function(){
+					if (parseInt(settings.fontSize)+2 <= 30){
+					var size = parseInt(settings.fontSize)+2;
+					settings.fontSize = size;
+					//initialReadingStyle();
+					sampleSettings = jQuery.extend({},settings);
+					logicUpdateSettings(userID,settings.font, settings.fontSize, settings.textColor,settings.backColor,  mode, logicUpdateSettingsCallback);
+					}
+					else {
+					alert("You are setting the font size too big!");
+					}
+
+					});
+
+			$('#btn_bookmark').live('click',function(){
+					if(userID == 1)
+					handleNonRegUser("reading.html");
+					else{
+					$.mobile.changePage("#bookmark", "slideup");
+					initialBookmarks();
+					}
+
+					});
+
+			$('#btn_settingPad').live('click',function(){
+					//sample style;
+					sampleSettings = jQuery.extend({},settings);
+					initialSampleStyle();
+					});
+
+			$('#btn_cancel_setting').live('click',function(){
+					sampleSettings = jQuery.extend({},settings);
+
+					$('#settingPad').dialog('close');	
+
+					});
+
+			$('#btn_save_setting').live('click',function(){
+					$('#settingPad').dialog('close');
+					settings = jQuery.extend({},sampleSettings);
+					initialReadingStyle();
+					logicUpdateSettings(userID,settings.font, settings.fontSize, settings.textColor,settings.backColor,  mode, logicUpdateSettingsCallback);
+					//save settings;	
+					});
+
+			$('#btn_cancel_chapters').live('click',function(){
+					$('#chapters').dialog('close');	
+					});
+
+			$('#btn_add_bookmark').live('click',function(){
+					//alert("Bookmark added!");
+					var comment = $('#comment')[0].value;
+					logicCreateBookmark(userID,bookID,currentChapNum,content.pagesToDisplay[currentPageNum].position,comment, mode, logicCreateBookmarkCallback)
+					//$('#bookmark').dialog('close');	
+					});
+
+			$('#btn_close_bookmark').live('click',function(){
+					$('#bookmark').dialog('close');	
+					});
+
+			$("input[name=slider]").change(function(event, ui){
+					var pageNum = $("input[name=slider]").val();
+					showPage(pageNum);	
+					//$("input[name=slider]").slider("refresh");
+					});
+
+			$("input[name=slider]").mouseup(function(event, ui){
+					var pageNum = $("input[name=slider]").val();
+					showPage(pageNum);	
+					$("input[name=slider]").slider("refresh");
+					});
+
+			$("input[name=slider]").touchend(function(event, ui){
+					var pageNum = $("input[name=slider]").val();
+					showPage(pageNum);	
+					$("input[name=slider]").slider("refresh");
+					});
+
+
+
+			$('#select-font').change(function(){
+					sampleSettings.font = $('#select-font').val();
+					initialSampleStyle();
+					});
+
+			$('#select-size').change(function(){
+					sampleSettings.fontSize = $('#select-size').val();
+					initialSampleStyle();
+					});
+
+			$('#select-text-color').change(function(){
+					sampleSettings.textColor = $('#select-text-color').val();
+					initialSampleStyle();
+					});
+
+			$('#select-background-color').change(function(){
+					sampleSettings.backColor = $('#select-background-color').val();
+					initialSampleStyle();
+					});
+
+			//$('#previousChap').live('click',showPreviousChap);
+
+			//$('#nextChap').live('click',showNextChap);
+			$('#btn_share').live('click', function() {				
+					$('#share').show();
+					$('#btn_share').hide();
+					});
+			$('#share').live('click', function() {				
+					$('#btn_share').show();
+					$('#share').hide();
+					});
+			$('#offline_reading').live('click', function(){
+					alert("Downloading...");
+					//alert("Coming soon");
+					logicAddNewBookLocal(userID,bookID,mode,function(status){
+						if(status ==1) alert("This book has been downloaded to your device, and you can continue reading it while offline!");
+						else alert("Sorry can not download");
+						});
+					});
+			$('#fb_feed').live('click', function(){
+					feeds(bookID,content.title.title,"Share");
+					});
+			$('#rr_feed').live('click', function(){
+					rrfeeds(bookID,content.title.title);
+					});
+		});
+
+		
+	</script>
+<body onload="onload()">
+    <div id="fb-root"></div>
+    <script src="scripts/facebook.js"></script>
+	<script type="text/javascript" src="scripts/renren.js"></script>
+	<div data-role="page">
+		<div data-role="header"  data-position="fixed">
+			<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-left ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+				<a id="library" data-role="button" data-icon="grid" data-iconpos="text" data-inline="true" >Library</a>
+				<a id="status"></a>
+			</div>
+				<div id = "btns_header" data-theme="a" data-type="horizontal" data-role="controlgroup" class="ui-btn-right ui-corner-all ui-controlgroup ui-controlgroup-horizontal"> 
+				<!--	<a id="btn_dec_font_size" data-role="button" data-inline="true">A</a>
+					<a id="btn_inc_font_size" data-role="button" data-inline="true">A</a>-->
+					  
+					<a id="btn_bookmark" href="#" data-rel="dialog" data-role="button" data-transition="slidedown">Bookmark</a>
+				</div>
+			<h1>Reading</h1>
+    	</div><!-- /header -->
+
+		<div id = "mainpad" data-role="content">
+			<div id="left_col">
+				<div class="upper">
+					◀
+				</div>
+
+				<div class="lower">
+					▶
+				</div>
+			</div><!-- End of left side bar-->
+			<div id="right_col">
+				<div class="upper">
+					◀
+				</div>
+
+				<div class="lower">
+					▶
+				</div>
+			</div><!-- End of right side bar-->
+			
+			<div id = "viewpad" data-role="content">
+				<div id="readingPad" class="reading">
+				</div>
+				<div id = "slider">
+					<input type="range" name="slider" value="0" min="1" max="100"  />
+				</div>
+			</div> <!--end of viewpad-->
+	</div><!-- /main pad content -->
+
+		<div id="footer" data-role="footer">
+			<div data-role="navbar">
+				<ul>
+					<li>
+						<a href="#chapters" data-rel="dialog" data-transition="slideup">Chapters</a>
+						
+					</li>
+					
+					<li>
+						<a id = "offline_reading">Keep it</a>
+					</li>
+					
+					<li>
+						<a id = "btn_settingPad" href="#settingPad" data-rel="dialog" data-transition="slideup">Setting</a>
+					</li>
+					
+					<li>
+						<a id="share" class="share"><img id = "fb_feed" src='styles/images/fb_share.png' width='30'/><img id = "rr_feed" src='styles/images/rr_share.png'  width='30'/></a>
+						<a id="btn_share" data-role="button">Share</a>
+					</li>
+	
+				</ul>
+			</div><!-- /navbar -->
+
+    	</div><!-- /Footer -->
+
+	</div><!-- /page -->
+	
+	
+	<div id="settingPad" data-role="page">
+		<div data-role="header" data-theme="a">
+			<h1>Setting</h1>
+		</div><!-- /header -->
+		
+		<div data-role="content" data-theme="a">
+			<p id="sample">This is the sample</p>
+			<div>
+			   <label for="select-font" class="select">Fonts:</label>
+			   <select name="select-font" id="select-font">
+			      <option value="Helvetica" style="font-family: Helvetica">Helvetica</option>
+			      <option value="Arial" style="font-family: Arial">Arial</option>
+			      <option value="sans-serif" style="font-family: sans-serif">sans-serif</option>
+			      <option value="Times New Roman" style="font-family: sans-serif">Times New Roman</option>
+				<option value="Courier New" style="font-family: Courier New">Courier New</option>
+			   </select>
+			</div>
+			<div>
+				<label for="select-size" class="select">Size:</label>
+				   <select name="select-size" id="select-size">
+						<option value="14">14px</option>
+						<option value="16">16px</option>
+						<option value="18">18px</option>
+						<option value="20">20px</option>
+						<option value="22">22px</option>
+						<option value="24">24px</option>
+						<option value="26">26px</option>
+						<option value="28">28px</option>
+						<option value="30">30px</option>
+				   </select>
+			</div>
+			<div>
+				<label for="select-text-color" class="select">Text Color:</label>
+				   <select name="select-text-color" id="select-text-color">
+				      <option value="#000000">Black</option>
+				      <option value="#f0f0f0">Gray</option>
+				      <option value="#00FF00">Green</option>
+				      <option value="#0000FF">Blue</option>
+					  <option value="#FFFF00">Yellow</option>
+				      <option value="#00FFFF">Light Blue</option>
+				      <option value="#FF00FF">Purple</option>
+				      <option value="#333">Default</option>
+				   </select>
+			</div>
+			<div>
+				<label for="select-background-color" class="select">Background Color:</label>
+				   <select name="select-background-color" id="select-background-color">
+				      <option value="#000000">Black</option>
+				      <option value="#202020">Dark</option>
+				      <option value="#00FF00">Green</option>
+				      <option value="#0000FF">Blue</option>
+					  <option value="#FFFF00">Yellow</option>
+				      <option value="#00FFFF">Light Blue</option>
+				      <option value="#FF00FF">Purple</option>
+				      <option value="#f0f0f0">Default</option>
+				   </select>
+			</div>
+			<br>
+			<div id="btns_settingPage">
+				<a id="btn_cancel_setting" data-role="button" data-ref="back" data-icon="back" data-iconpos="text" data-inline="true" >Cancel</a>
+				<a id="btn_save_setting" data-role="button" data-icon="plus" data-iconpos="text" data-inline="true" >Save</a>
+			</div>
+		</div>
+	</div> <!-- Ending of setting dialog -->
+	
+	<!--Begaining of Chapters-->
+	<div id="chapters" data-role="page">
+		<div data-role="header" data-theme="a">
+			<h1>Chapters</h1>
+		</div><!-- /header -->
+		
+		<div data-role="content" data-theme="a">
+			<ol idata-role="listview" id = "list_chapters">
+			</ol>
+		</div>
+		<div>
+			<a id="btn_cancel_chapters" data-role="button" data-ref="back" data-icon="back" data-iconpos="text" data-inline="true" >Cancel</a>
+		</div>
+		
+	</div>
+	<!--End of Chapters-->
+
+	<!--Begining of Bookmark-->
+	<div id="bookmark" data-role="dialog">
+		<div data-role="header" data-theme="a">
+			<h1>Bookmarks</h1>
+		</div><!-- /header -->
+		<div data-theme="a">
+			<div data-role="fieldcontain">
+			    <label for="name">Bookmark Lable:</label>
+			    <input type="text" name="comment" id="comment" value="" placeholder="Here to type something!" />
+			</div>
+			<div>
+			<a id="btn_add_bookmark" data-role="button" data-ref="back" data-icon="back" data-iconpos="text" data-inline="true" >Add</a>
+			</div>
+		</div>
+		<br>
+		<div data-role="content" data-theme="a">
+			<ol id = "list_bookmarks">
+			</ol>
+		</div>
+		<div>
+			<a id="btn_close_bookmark" data-role="button" data-ref="back" data-icon="back" data-iconpos="text" data-inline="true" >Close</a>
+		</div>
+		
+	</div>
+	<!--End  of Bookmark-->
+	
+	<div id='login_dialog' data-role='dialog'>
+		<div data-role="header" data-theme="a">
+			<h1>Please login</h1>
+		</div>
+		<p>
+			You have not logged in yet so you are not be able to synchronize your reading history or use the Library function<br>
+			You can choose to login with one of the way below:
+		</p>
+		<div style="text-align:center">
+			<a id="rr_login_onfly">	
+            <img src="styles/images/rrlogin.PNG" title="RenRen login" alt="RenRen login"  height="20"/>	
+            </a>
+			<a><img id="fb_login_onfly" src="styles/images/fblogin.PNG" title="login with facebook" alt="login with facebook" height="20"/>
+			</a>
+			<a id = 'btn_not_to_login' data-role="button">Continue without login</a>
+		</div>
+	</div>
+	
+	<div id="finish_dialog" data-role='dialog'>
+		<div data-role="header" data-theme="a">
+			<h1>Share this book to your friends</h1>
+		</div>
+		<p>
+			You have finished reading this book, how about sharing it to your friends?
+			<a ><img src='styles/images/fb_share.png' onclick='feeds(bookID,"Yun Reading","share");'width='30'/><img src='styles/images/rr_share.png' onclick='rrfeeds(bookID,"云读");' width='30'/></a>
+		</p>
+		<div>
+		<!---Here to add the share buttons -->
+			
+			
+		</div>
+	</div>
+	
+</body>
+
+</html>

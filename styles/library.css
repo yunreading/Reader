@@ -1,0 +1,47 @@
+.table_books {
+    width: 100%;
+    text-align: center;
+    background: #E2D0BE;
+    border: 1px solid #C2A58B;
+}
+
+tr{
+    border-left-image: url(images/mask_left.png);
+    border-right-image: url(images/mask_right.png);
+}
+td{
+    background-image: url(images/shelf.jpg);
+    background-repeat: repeadt-x;
+    background-size: contain;
+    //border-bottom: 10px solid #DEB887;
+    padding-bottom: 12px;
+	vertical-align: bottom;
+	position:relative;
+}
+
+.library{
+    background-image: url(images/library_bg.jpeg);
+    background-size: auto;
+}
+
+
+#btn_reading {
+	top:-10px;
+}
+
+#btn_edit{
+	height:27px;
+}
+
+.btn_del {
+	position:absolute;
+	top:90%;
+	left:47%;
+	display:block;
+}
+
+#mainpad{
+	margin-top:30px;
+	margin-bottom:30px;
+}
+

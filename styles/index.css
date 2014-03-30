@@ -1,0 +1,70 @@
+#tops .ui-icon { 
+	background:  url(images/icon-tops.png) 50% 50% no-repeat;
+	background-size: 24px 16px;   
+}
+
+#footer{
+	position:fixed;
+}
+#div_search{
+	position:fixed;
+	left: 75%;
+	width:25%;
+	bottom: 30px;
+	margin: 0;
+}
+
+.btn_go{
+	float:right;
+	width:20%;
+	margin:0;
+	padding:0;
+}
+.book_info_cover{
+	position:relative;
+	float: left;
+	text-align:right;
+	width:40%;
+	padding:10px;
+}
+
+.book_info_details{
+	position:relative;
+	float:left;
+	width:50%;
+	padding:10px;
+}
+
+.table_books {
+    width: 100%;
+    text-align: center;
+    background: #E2D0BE;
+    border: 1px solid #C2A58B;
+}
+
+tr{
+    border-left-image: url(images/mask_left.png);
+    border-right-image: url(images/mask_right.png);
+}
+td{
+    background-image: url(images/shelf.jpg);
+    background-repeat: repeat-x;
+    background-size: contain;
+    border-bottom: 10px solid #DEB887;
+    padding-bottom: 12px;
+	vertical-align: bottom;
+}
+
+.index{
+    background-image: url(images/library_bg.jpeg);
+    background-size: auto;
+}
+
+#cat_list{
+	text-align:center;
+}
+
+#mainpad{
+	margin-bottom:30px;
+}
+
